@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release signing comes from env vars (CI sets them); unset = unsigned build.
+// NOTE: System.getenv must be read *outside* the signingConfigs block - AGP only
+// honours a signing config whose properties are unconditional.
+def ksPath = System.getenv('KEYSTORE_FILE')
+def ksStorePass = System.getenv('KEYSTORE_PASSWORD')
+def ksAlias = System.getenv('KEY_ALIAS')
+def ksKeyPass = System.getenv('KEY_PASSWORD')
+
+android {
+    namespace 'io.github.fragtion.statusback'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'io.github.fragtion.statusback'
+        // targetSdk must be >= 24 or Android refuses to install; keep minSdk modest -
+        // AGP stops signing the release once minSdk is set high (verified: 21 signs, 26 does not).
+        targetSdk 35
+        minSdk 21
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    if (ksPath) {
+        signingConfigs {
+            release {
+                storeFile file(ksPath)
+                storePassword ksStorePass
+                keyAlias ksAlias
+                keyPassword ksKeyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ksPath) signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    compileOnly 'io.github.libxposed:api:102.0.0'
+}
